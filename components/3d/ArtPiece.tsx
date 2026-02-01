@@ -1,8 +1,7 @@
-import React, { useRef, useMemo, useState } from 'react';
-import { useTexture, Text } from '@react-three/drei';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
+import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { FrameStyle, GalleryImage } from '../../types';
-import { TEXTURE_URLS } from '../../types';
 
 interface ArtPieceProps {
   image: GalleryImage;
@@ -22,12 +21,40 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
   const meshRef = useRef<THREE.Mesh>(null);
   const spotlightRef = useRef<THREE.SpotLight>(null);
   const [hovered, setHovered] = useState(false);
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  // Load image texture with error handling fallback
-  const texture = useTexture(image.url, (texture) => {
-    // Correct aspect ratio if needed based on texture
-    // But we are sticking to simple sizing for this builder
-  });
+  // Safe Texture Loading
+  useEffect(() => {
+      let isMounted = true;
+      setLoading(true);
+      setError(false);
+
+      const loader = new THREE.TextureLoader();
+      loader.setCrossOrigin('anonymous');
+      
+      loader.load(
+          image.url,
+          (tex) => {
+              if (isMounted) {
+                  // tex.encoding = THREE.sRGBEncoding; // Three r139+ handles this differently, usually automatic in Fiber
+                  setTexture(tex);
+                  setLoading(false);
+              }
+          },
+          undefined,
+          (err) => {
+              console.warn(`Failed to load image: ${image.url}`, err);
+              if (isMounted) {
+                  setError(true);
+                  setLoading(false);
+              }
+          }
+      );
+
+      return () => { isMounted = false; };
+  }, [image.url]);
   
   // Calculate dimensions based on aspect ratio provided or default to 1:1 if not
   const aspectRatio = image.aspectRatio || 1;
@@ -95,11 +122,22 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
             {/* The Image Mesh */}
             <mesh ref={meshRef} position={[0, 0, 0.01]}>
                 <planeGeometry args={[width, height]} />
-                <meshStandardMaterial map={texture} roughness={0.4} />
+                {texture && !error ? (
+                    <meshStandardMaterial map={texture} roughness={0.4} />
+                ) : (
+                    <meshStandardMaterial color={error ? "#333" : "#666"} roughness={0.8} />
+                )}
             </mesh>
 
+            {/* Loading / Error Indicator */}
+            {(loading || error) && (
+                 <Text position={[0, 0, 0.02]} fontSize={size * 0.1} color="white">
+                    {loading ? "Loading..." : "Image Failed"}
+                 </Text>
+            )}
+
             {/* Title Text (Only shows on hover if title exists) */}
-            {image.title && hovered && (
+            {image.title && hovered && !loading && (
                 <group position={[0, -height/2 - 0.4, 0.1]}>
                     <mesh position={[0,0,-0.01]}>
                         <planeGeometry args={[width, 0.3]} />
