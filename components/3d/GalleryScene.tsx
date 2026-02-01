@@ -17,7 +17,7 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
     const effectiveColor = config.wallTexture === 'dark' ? '#1a1a1a' : config.wallColor;
     
     const [texture, setTexture] = useState<THREE.Texture | null>(null);
-    const [loading, setLoading] = useState(false);
+    const gl = useThree((state) => state.gl);
 
     // 1. Load Texture (Only runs when URL changes)
     useEffect(() => {
@@ -27,7 +27,6 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
         }
 
         let isMounted = true;
-        setLoading(true);
         const loader = new THREE.TextureLoader();
         loader.setCrossOrigin('anonymous');
         
@@ -36,8 +35,10 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
             (loadedTex) => {
                 if(isMounted) {
                     loadedTex.colorSpace = THREE.SRGBColorSpace;
+                    loadedTex.wrapS = loadedTex.wrapT = THREE.RepeatWrapping;
+                    // Improved texture settings for sharpness
+                    loadedTex.anisotropy = gl.capabilities.getMaxAnisotropy();
                     setTexture(loadedTex);
-                    setLoading(false);
                 }
             },
             undefined,
@@ -45,18 +46,23 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
                 console.warn("Failed to load wall texture:", textureUrl);
                 if(isMounted) {
                     setTexture(null);
-                    setLoading(false);
                 }
             }
         );
         return () => { isMounted = false; };
-    }, [textureUrl]);
+    }, [textureUrl, gl]);
 
     // 2. Update Repeat Pattern (Runs when width changes)
     useEffect(() => {
         if (texture) {
-            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(width / 4, 2);
+            const meshWidth = width * 6;
+            
+            // Repeat once vertically (Y) as requested
+            // Repeat on X proportional to the width. 
+            // Using a divisor of 4 to match the typical aspect ratio of the texture images relative to the wall height (10)
+            const repeatX = Math.max(1, meshWidth / 10);
+            
+            texture.repeat.set(repeatX, 4);
             texture.needsUpdate = true;
         }
     }, [texture, width]);
@@ -64,11 +70,13 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
     return (
         <mesh position={[0, 0, -0.5]} receiveShadow>
             <planeGeometry args={[width * 1.5, 10]} />
-            {texture ? (
-                <meshStandardMaterial map={texture} color={effectiveColor} roughness={0.8} />
-            ) : (
-                <meshStandardMaterial color={effectiveColor} roughness={0.8} />
-            )}
+            {/* Using a key ensures the material is fully recreated if texture state changes, preventing "sticky" standard material behavior */}
+            <meshStandardMaterial 
+                key={`${config.wallTexture}-${texture?.uuid}`}
+                map={texture} 
+                color={effectiveColor} 
+                roughness={0.8} 
+            />
         </mesh>
     );
 };

@@ -2,6 +2,7 @@ import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { FrameStyle, GalleryImage } from '../../types';
+import { getOptimizedImageUrl } from '../../utils';
 
 interface ArtPieceProps {
   image: GalleryImage;
@@ -36,8 +37,10 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
       const loader = new THREE.TextureLoader();
       loader.setCrossOrigin('anonymous');
       
+      const optimizedUrl = getOptimizedImageUrl(image.url);
+
       loader.load(
-          image.url,
+          optimizedUrl,
           (tex) => {
               if (isMounted) {
                   // Ensure correct encoding/color space
@@ -48,7 +51,7 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
           },
           undefined,
           (err) => {
-              console.warn(`Failed to load image: ${image.url}`, err);
+              console.warn(`Failed to load image: ${optimizedUrl}`, err);
               if (isMounted) {
                   setError(true);
                   setLoading(false);
@@ -121,11 +124,13 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
             onPointerOver={() => setHovered(true)} 
             onPointerOut={() => setHovered(false)}
         >
-            {/* Backboard/Frame Mesh - Casts shadow on wall */}
-            <mesh position={[0, 0, -0.05]} castShadow receiveShadow>
-                <boxGeometry args={[width + frameThickness, height + frameThickness, frameDepth]} />
-                <primitive object={frameMaterial} attach="material" />
-            </mesh>
+            {/* Backboard/Frame Mesh - Only render if frame style is not 'none' */}
+            {frameStyle !== 'none' && (
+                <mesh position={[0, 0, -0.05]} castShadow receiveShadow>
+                    <boxGeometry args={[width + frameThickness, height + frameThickness, frameDepth]} />
+                    <primitive object={frameMaterial} attach="material" />
+                </mesh>
+            )}
 
             {/* The Image Mesh */}
             <mesh ref={meshRef} position={[0, 0, 0.01]}>
@@ -147,13 +152,13 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
 
             {/* Title Text (Only shows on hover if title exists) */}
             {image.title && hovered && !loading && (
-                <group position={[0, -height/2 - 0.4, 0.1]}>
+                <group position={[0, -height/2 - 0.25, 0.1]}>
                     <mesh position={[0,0,-0.01]}>
-                        <planeGeometry args={[width, 0.3]} />
+                        <planeGeometry args={[width, 0.15]} />
                         <meshBasicMaterial color="rgba(0,0,0,0.8)" transparent opacity={0.8} />
                     </mesh>
                     <Text
-                        fontSize={0.15}
+                        fontSize={0.075} 
                         color="white"
                         anchorX="center"
                         anchorY="middle"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GalleryConfig, WallTexture, FrameStyle } from '../../types';
-import { Trash2, Plus, Share2, Eye, GripHorizontal, Settings, Image as ImageIcon } from 'lucide-react';
+import { getOptimizedImageUrl } from '../../utils';
+import { Trash2, Plus, Share2, Eye, GripHorizontal, Settings, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
 interface ControlsProps {
   config: GalleryConfig;
@@ -41,6 +42,14 @@ const Controls: React.FC<ControlsProps> = ({ config, updateConfig, onOpenEmbed }
   const updateImageAspect = (id: string, ratio: number) => {
       const newImages = config.images.map(img => {
           if (img.id === id) return { ...img, aspectRatio: ratio };
+          return img;
+      });
+      updateConfig({ ...config, images: newImages });
+  };
+
+  const updateImageTitle = (id: string, title: string) => {
+      const newImages = config.images.map(img => {
+          if (img.id === id) return { ...img, title };
           return img;
       });
       updateConfig({ ...config, images: newImages });
@@ -149,6 +158,7 @@ const Controls: React.FC<ControlsProps> = ({ config, updateConfig, onOpenEmbed }
                         <option value="wood">Classic Wood</option>
                         <option value="gold">Ornate Gold</option>
                         <option value="black">Modern Black</option>
+                        <option value="none">No Frame</option>
                     </select>
                 </div>
 
@@ -199,7 +209,14 @@ const Controls: React.FC<ControlsProps> = ({ config, updateConfig, onOpenEmbed }
                             <Plus size={16} />
                         </button>
                     </div>
-                    <p className="text-[10px] text-zinc-500">Use HTTPS links. Try Unsplash or Imgur.</p>
+                    
+                    <div className="bg-amber-900/30 border border-amber-800/50 rounded p-2 flex gap-2 items-start mt-2">
+                        <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-200/80 leading-relaxed">
+                            For Google Drive images, you <strong>must</strong> set access to <strong>"Anyone with the link"</strong>. 
+                            If the image fails in the gallery but works in the sidebar, it's likely a permission/cookie issue.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="space-y-3">
@@ -208,10 +225,16 @@ const Controls: React.FC<ControlsProps> = ({ config, updateConfig, onOpenEmbed }
                         <div key={img.id} className="bg-zinc-800/50 border border-zinc-800 rounded p-3 flex gap-3 items-start group">
                             <div 
                                 className="w-12 h-12 bg-zinc-700 rounded bg-cover bg-center shrink-0"
-                                style={{ backgroundImage: `url(${img.url})` }}
+                                style={{ backgroundImage: `url(${getOptimizedImageUrl(img.url)})` }}
                             />
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs text-zinc-300 truncate font-medium">Artwork #{i + 1}</p>
+                                <input 
+                                    type="text"
+                                    value={img.title || ''}
+                                    onChange={(e) => updateImageTitle(img.id, e.target.value)}
+                                    placeholder={`Artwork #${i + 1}`}
+                                    className="w-full bg-transparent border-b border-transparent hover:border-zinc-600 focus:border-purple-500 text-xs text-zinc-300 font-medium focus:outline-none transition-colors px-0 py-0.5"
+                                />
                                 <div className="mt-2 flex items-center gap-2">
                                     <label className="text-[10px] text-zinc-500">Aspect</label>
                                     <input 

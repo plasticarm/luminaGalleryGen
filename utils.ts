@@ -42,3 +42,30 @@ export const generateEmbedCode = (config: GalleryConfig, baseUrl: string): strin
   const hash = serializeConfig(config);
   return `<iframe src="${baseUrl}#${hash}" width="100%" height="600px" frameborder="0" allow="fullscreen; accelerometer; gyroscope; magnetometer;"></iframe>`;
 };
+
+/**
+ * Transforms URLs to ensure they load correctly in WebGL/CORS contexts.
+ * Specifically handles Google Drive links by converting them to the thumbnail API.
+ */
+export const getOptimizedImageUrl = (url: string): string => {
+  if (!url) return '';
+  
+  // Google Drive Detection
+  if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    // Regex to find ID in formats like:
+    // https://drive.google.com/file/d/123456789/view
+    // https://drive.google.com/open?id=123456789
+    // https://drive.google.com/uc?id=123456789
+    const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    
+    if (idMatch && idMatch[1]) {
+      // Use lh3.googleusercontent.com/d/{id} with a size parameter.
+      // This endpoint is a direct link to the content on Google's global CDN.
+      // Critically, it supports CORS (Access-Control-Allow-Origin) which is required for WebGL textures.
+      // The standard drive.google.com links often redirect or lack these headers.
+      return `https://lh3.googleusercontent.com/d/${idMatch[1]}=w2000`;
+    }
+  }
+  
+  return url;
+};
