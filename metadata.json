@@ -1,0 +1,5 @@
+{
+  "name": "Lumina Gallery Builder",
+  "description": "A 3D virtual art gallery builder where you can curate images, customize lighting and frames, and generate embed codes for websites.",
+  "requestFramePermissions": []
+}
