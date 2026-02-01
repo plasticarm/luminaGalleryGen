@@ -22,9 +22,9 @@ export interface GalleryImage {
 
 export const DEFAULT_CONFIG: GalleryConfig = {
   images: [
-    { id: '1', url: 'https://images.unsplash.com/photo-1549490349-8643362247b5?fit=crop&w=800&q=80', aspectRatio: 1.33 },
-    { id: '2', url: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?fit=crop&w=600&q=80', aspectRatio: 0.75 },
-    { id: '3', url: 'https://images.unsplash.com/photo-1577720580479-7d839d829c73?fit=crop&w=800&q=80', aspectRatio: 1 },
+    { id: '1', url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80', aspectRatio: 0.75, title: 'Portrait of Art' },
+    { id: '2', url: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?auto=format&fit=crop&w=800&q=80', aspectRatio: 1.5, title: 'Abstract Waves' },
+    { id: '3', url: 'https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=800&q=80', aspectRatio: 1.33, title: 'The Mountains' },
   ],
   spacing: 2.5,
   size: 1.5,
@@ -32,17 +32,17 @@ export const DEFAULT_CONFIG: GalleryConfig = {
   wallColor: '#e5e5e5',
   frameStyle: 'wood',
   spotlightIntensity: 2.5,
-  ambientIntensity: 0.4,
+  ambientIntensity: 0.5,
 };
 
-// Using reliable texture sources
+// Using seamless architectural textures
 export const TEXTURE_URLS = {
-  // White stucco/plaster
-  plaster: 'https://images.unsplash.com/photo-1558603668-6570496b66f8?auto=format&fit=crop&w=1000&q=80', 
-  // Concrete texture
+  // Clean white plaster
+  plaster: 'https://images.unsplash.com/photo-1594905479634-114cb6c5c808?auto=format&fit=crop&w=1000&q=80', 
+  // Raw concrete
   concrete: 'https://images.unsplash.com/photo-1518135122165-22d7b8893701?auto=format&fit=crop&w=1000&q=80',
-  // White brick wall
+  // White painted brick
   brick: 'https://images.unsplash.com/photo-1596131460336-e822f303666d?auto=format&fit=crop&w=1000&q=80',
-  // Dark wood floor/wall texture
-  wood: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=1000&q=80',
+  // Dark wood floor/wall
+  wood: 'https://images.unsplash.com/photo-1542268112-9856f70914c6?auto=format&fit=crop&w=1000&q=80',
 };

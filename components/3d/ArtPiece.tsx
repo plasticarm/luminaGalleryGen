@@ -19,11 +19,13 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
   spotlightIntensity 
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const spotlightRef = useRef<THREE.SpotLight>(null);
   const [hovered, setHovered] = useState(false);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  
+  // Create a persistent target for the spotlight to point at
+  const [target] = useState(() => new THREE.Object3D());
 
   // Safe Texture Loading
   useEffect(() => {
@@ -38,7 +40,8 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
           image.url,
           (tex) => {
               if (isMounted) {
-                  // tex.encoding = THREE.sRGBEncoding; // Three r139+ handles this differently, usually automatic in Fiber
+                  // Ensure correct encoding/color space
+                  tex.colorSpace = THREE.SRGBColorSpace; 
                   setTexture(tex);
                   setLoading(false);
               }
@@ -83,7 +86,7 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
         return new THREE.MeshStandardMaterial({ 
             color: '#5c4033', 
             roughness: 0.9,
-            map: null // Could load a wood texture here 
+            map: null 
         });
       case 'minimal':
       default:
@@ -96,16 +99,21 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
 
   return (
     <group position={position}>
-        {/* Spotlight Targeting the Image */}
+        {/* Target for spotlight must be in the scene graph */}
+        <primitive object={target} position={[0, 0, 0]} />
+
+        {/* Spotlight Targeting the center of this group */}
+        {/* decay={0} and boosted intensity ensures visibility with physical lights */}
         <spotLight
-            ref={spotlightRef}
             position={[0, 4, 3]}
-            angle={0.3}
+            angle={0.4}
             penumbra={0.5}
-            intensity={spotlightIntensity}
+            intensity={spotlightIntensity} 
             castShadow
-            target={meshRef.current || undefined}
-            color="#fff8e7" // Slightly warm light
+            target={target}
+            distance={15}
+            decay={0}
+            color="#fff8e7" 
         />
 
         {/* The Frame Container */}
@@ -113,8 +121,8 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
             onPointerOver={() => setHovered(true)} 
             onPointerOut={() => setHovered(false)}
         >
-            {/* Backboard/Frame Mesh */}
-            <mesh position={[0, 0, -0.05]}>
+            {/* Backboard/Frame Mesh - Casts shadow on wall */}
+            <mesh position={[0, 0, -0.05]} castShadow receiveShadow>
                 <boxGeometry args={[width + frameThickness, height + frameThickness, frameDepth]} />
                 <primitive object={frameMaterial} attach="material" />
             </mesh>
@@ -123,7 +131,8 @@ const ArtPiece: React.FC<ArtPieceProps> = ({
             <mesh ref={meshRef} position={[0, 0, 0.01]}>
                 <planeGeometry args={[width, height]} />
                 {texture && !error ? (
-                    <meshStandardMaterial map={texture} roughness={0.4} />
+                    // Use MeshBasicMaterial so the art is always visible regardless of lighting
+                    <meshBasicMaterial map={texture} toneMapped={false} />
                 ) : (
                     <meshStandardMaterial color={error ? "#333" : "#666"} roughness={0.8} />
                 )}

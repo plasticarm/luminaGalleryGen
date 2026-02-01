@@ -19,12 +19,14 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
     const [texture, setTexture] = useState<THREE.Texture | null>(null);
     const [loading, setLoading] = useState(false);
 
+    // 1. Load Texture (Only runs when URL changes)
     useEffect(() => {
         if (!textureUrl) {
             setTexture(null);
             return;
         }
 
+        let isMounted = true;
         setLoading(true);
         const loader = new THREE.TextureLoader();
         loader.setCrossOrigin('anonymous');
@@ -32,21 +34,32 @@ const Wall = ({ config, width }: { config: GalleryConfig, width: number }) => {
         loader.load(
             textureUrl,
             (loadedTex) => {
-                loadedTex.wrapS = loadedTex.wrapT = THREE.RepeatWrapping;
-                loadedTex.repeat.set(width / 4, 2);
-                // Depending on Three version, encoding might need setting, but usually standard works
-                setTexture(loadedTex);
-                setLoading(false);
+                if(isMounted) {
+                    loadedTex.colorSpace = THREE.SRGBColorSpace;
+                    setTexture(loadedTex);
+                    setLoading(false);
+                }
             },
             undefined,
             (err) => {
                 console.warn("Failed to load wall texture:", textureUrl);
-                // Fallback to color by setting texture to null
-                setTexture(null);
-                setLoading(false);
+                if(isMounted) {
+                    setTexture(null);
+                    setLoading(false);
+                }
             }
         );
-    }, [textureUrl, width]);
+        return () => { isMounted = false; };
+    }, [textureUrl]);
+
+    // 2. Update Repeat Pattern (Runs when width changes)
+    useEffect(() => {
+        if (texture) {
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(width / 4, 2);
+            texture.needsUpdate = true;
+        }
+    }, [texture, width]);
 
     return (
         <mesh position={[0, 0, -0.5]} receiveShadow>
